@@ -34,27 +34,30 @@ def fetch_prices():
 
 
 def main():
-    logger.info('Initialize')
 
-    data_sink = Observable()
-    builder = Builder(config)
-    builder.bind(data_sink)
+	logger.info('Initialize')
+	
+	data_sink = Observable()
+	builder = Builder(config)
+	builder.bind(data_sink)
+	
+	try:
+	    while True:
+	        try:
+	            prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
+	            data_sink.update_observers(prices)
+	            time.sleep(config.refresh_interval)
+	        except (HTTPError, URLError) as e:
+	            logger.error(str(e))
+	            time.sleep(5)
+	except IOError as e:
+	    logger.error(str(e))
+	except KeyboardInterrupt:
+	    logger.info('Exit')
+	    data_sink.close()
+	    exit()
+	
 
-    try:
-        while True:
-            try:
-                prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
-                data_sink.update_observers(prices)
-                time.sleep(config.refresh_interval)
-            except (HTTPError, URLError) as e:
-                logger.error(str(e))
-                time.sleep(5)
-    except IOError as e:
-        logger.error(str(e))
-    except KeyboardInterrupt:
-        logger.info('Exit')
-        data_sink.close()
-        exit()
 
 
 if __name__ == "__main__":
