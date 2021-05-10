@@ -9,6 +9,7 @@ from config.builder import Builder
 from config.config import config
 from logs import logger
 from presentation.observer import Observable
+from leds import Leds
 
 DATA_SLICE_DAYS = 1
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
@@ -40,16 +41,21 @@ def main():
 	data_sink = Observable()
 	builder = Builder(config)
 	builder.bind(data_sink)
+	leds = Leds()
+
 	
 	try:
-	    while True:
-	        try:
-	            prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
-	            data_sink.update_observers(prices)
-	            time.sleep(config.refresh_interval)
-	        except (HTTPError, URLError) as e:
-	            logger.error(str(e))
-	            time.sleep(5)
+		while True:
+			try:
+				prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
+				data_sink.update_observers(prices)
+				leds.off()
+				time.sleep(config.refresh_interval)
+
+			except (HTTPError, URLError) as e:
+				logger.error(str(e))
+				leds.on()
+				time.sleep(5)
 	except IOError as e:
 	    logger.error(str(e))
 	except KeyboardInterrupt:
