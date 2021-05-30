@@ -39,4 +39,3 @@ class Picture(Observer):
 
     def close(self):
         pass
-
