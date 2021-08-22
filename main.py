@@ -27,7 +27,7 @@ def fetch_prices():
     start_data = (timeslot_end - timedelta(days=DATA_SLICE_DAYS)).strftime(DATETIME_FORMAT)
     url = f'https://production.api.coindesk.com/v2/price/values/{config.currency}?ohlc=true&start_date={start_data}&end_date={end_date}'
     req = Request(url)
-    data = urlopen(req).read()
+    data = urlopen(req, timeout=10).read()
     external_data = json.loads(data)
     prices = [entry[1:] for entry in external_data['data']['entries']]
     return prices
@@ -43,26 +43,23 @@ def main():
 	leds = Leds()
 
 	
-	try:
-		while True:
-			try:
-				prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
-				data_sink.update_observers(prices)
-				leds.off()
-				time.sleep(config.refresh_interval)
+	while True:
+		try:
+			prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
+			data_sink.update_observers(prices)
+			leds.off()
+			time.sleep(config.refresh_interval)
 
-			except (HTTPError, URLError) as e:
-				logger.error(str(e))
-				leds.on()
-				time.sleep(5)
-	except IOError as e:
-	    logger.error(str(e))
-	except KeyboardInterrupt:
-	    logger.info('Exit')
-	    data_sink.close()
-	    exit()
+		except Exception as e:
+			logger.error(str(e))
+			leds.on()
+			time.sleep(10)
 	
-
+		except KeyboardInterrupt:
+	    		logger.info('Exit')
+	    		data_sink.close()
+	    		exit()
+	
 
 
 if __name__ == "__main__":
